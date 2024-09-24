@@ -42,7 +42,7 @@ exit /b
 :: 设置文件夹路径
 :setFolderPath
 if "%~1"=="" (
-    set "folderPath=%defaultFolderPath%"
+    set "folderPath=%defaultFolder%"
 ) else (
     set "folderPath=%~1"
 )
