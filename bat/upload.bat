@@ -77,9 +77,10 @@ exit /b
 :: 上传文件到服务器
 :: 参数1：时间戳，用于生成压缩文件名
 :uploadFile
+echo 正在上传文件...
 set "zipFile=%~1"
 curl -F "file=@%zipFile%" -F "webSiteKey=%webSiteKey%" -F "userKey=%userKey%" %uploadUrl%
-echo .
+echo.
 exit /b %errorlevel%
 
 
