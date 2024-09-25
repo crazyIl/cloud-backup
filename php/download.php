@@ -1,7 +1,7 @@
 <?php
 include_once 'common.php';
 
-// 检查是否提供了webSiteKey和userKey
+// 检查是否提供了 webSiteKey 和 userKey
 if (!isset($_GET['webSiteKey']) || !isset($_GET['userKey'])) {
     echo "缺少 webSiteKey 或 userKey。";
     exit;
@@ -23,7 +23,7 @@ if (empty($userKey)) {
     return;
 }
 
-// 使用正则表达式校验 userKey 只能包含 a-zA-Z0-9-_ 
+// 使用正则表达式校验 userKey 只能包含 a-zA-Z0-9-_
 if (!preg_match('/^[a-zA-Z0-9_-]+$/', $userKey)) {
     echo '无效的 userKey，userKey 只能包含字母、数字、下划线和连字符。';
     return;
@@ -35,6 +35,15 @@ $folder = 'backup' . DIRECTORY_SEPARATOR . $userKey;
 // 检查文件夹是否存在
 if (!is_dir($folder)) {
     echo "用户文件夹不存在。";
+    exit;
+}
+
+// 获取用户指定的文件名
+$requestedFileName = isset($_GET['fileName']) ? $_GET['fileName'] : '';
+
+// 检查指定文件名是否合法（不能包含 ../ 或其他路径穿越字符）
+if ($requestedFileName && !preg_match('/^[a-zA-Z0-9._-]+$/', $requestedFileName)) {
+    echo "非法的文件名。";
     exit;
 }
 
@@ -52,27 +61,34 @@ usort($files, function ($a, $b) {
     return filemtime($a) - filemtime($b);
 });
 
-// 获取最后一个文件（最新的文件）
-$latestFile = end($files);
+// 如果指定了文件名，使用该文件，否则获取最新文件
+if ($requestedFileName) {
+    $filePath = $folder . DIRECTORY_SEPARATOR . $requestedFileName;
+    if (!file_exists($filePath) || !is_readable($filePath)) {
+        echo "指定的文件不存在或不可读。";
+        exit;
+    }
+} else {
+    // 获取最后一个文件（最新的文件）
+    $filePath = end($files);
+}
 
 // 检查文件是否存在并可读
-if (file_exists($latestFile) && is_readable($latestFile)) {
-    // 获取文件的basename(文件名)
-    $fileName = basename($latestFile);
-    
+if (file_exists($filePath) && is_readable($filePath)) {
+    // 获取文件的 basename (文件名)
+    $fileName = basename($filePath);
+
     // 设置下载头
     header('Content-Description: File Transfer');
     header('Content-Type: application/octet-stream');
     header('Content-Disposition: attachment; filename="' . $fileName . '"');
-    header('Content-Length: ' . filesize($latestFile));
+    header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: must-revalidate');
     header('Pragma: public');
     header('Expires: 0');
 
     // 读取文件并输出
-    readfile($latestFile);
-    exit;
+    readfile($filePath);
 } else {
-    echo "无法读取文件: " . $latestFile;
-    exit;
+    echo "无法读取文件: " . $filePath;
 }
